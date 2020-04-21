@@ -1,11 +1,9 @@
 package v1
 
 import (
-	"context"
-	"github.com/XuJinTao1996/coredns-management/models/etcd"
 	"github.com/XuJinTao1996/coredns-management/pkg/app"
 	"github.com/XuJinTao1996/coredns-management/pkg/e"
-	"github.com/XuJinTao1996/coredns-management/pkg/msg"
+	"github.com/XuJinTao1996/coredns-management/pkg/services"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -14,10 +12,32 @@ import (
 func GetDnsRecords(c *gin.Context) {
 	appG := app.Gin{C: c}
 	data := make(map[string]interface{})
+	zone := c.Query("zone")
+	resp, count, err := services.Get(zone)
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR, data)
+		return
+	}
 
-	etcdObj := etcd.ETCD{etcd.EtcdCli}
-	resp, err := etcdObj.GET("/coredns", context.TODO())
+	data["list"] = resp
+	data["count"] = count
+	appG.Response(http.StatusOK, e.SUCCESS, data)
+}
 
+// add a dns records
+func AddDnsRecord(c *gin.Context) {
+	var dnsRecord services.DNSRecord
+
+	appG := app.Gin{C: c}
+	data := make(map[string]interface{})
+
+	err := c.ShouldBind(&dnsRecord)
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR, data)
+		return
+	}
+
+	resp, err := dnsRecord.Add()
 	if err != nil {
 		appG.Response(http.StatusInternalServerError, e.ERROR, data)
 		return
@@ -28,19 +48,36 @@ func GetDnsRecords(c *gin.Context) {
 }
 
 // add a dns records
-func AddDnsRecords(c *gin.Context) {
+func DeleteDnsRecords(c *gin.Context) {
+	var (
+		resp interface{}
+		err  error
+	)
 	appG := app.Gin{C: c}
 	data := make(map[string]interface{})
 
-	key := c.PostForm("key")
-	value := c.PostForm("value")
+	zone := c.Query("zone")
+	record := c.Query("record")
 
-	etcdObj := etcd.ETCD{etcd.EtcdCli}
-	resp, err := etcdObj.PUT(msg.String2Path(key), value, context.TODO())
-
-	if err != nil {
+	if zone == "" && record == "" {
 		appG.Response(http.StatusInternalServerError, e.ERROR, data)
 		return
+	}
+
+	if zone != "" && record != "" {
+		resp, err = services.Delete(zone, record)
+		if err != nil {
+			appG.Response(http.StatusInternalServerError, e.ERROR, data)
+			return
+		}
+	}
+
+	if zone != "" {
+		resp, err = services.DeleteZone(zone)
+		if err != nil {
+			appG.Response(http.StatusInternalServerError, e.ERROR, data)
+			return
+		}
 	}
 
 	data["list"] = resp

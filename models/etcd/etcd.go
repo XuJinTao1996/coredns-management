@@ -21,9 +21,10 @@ type ETCD struct {
 }
 
 type EtcdOpt interface {
-	GET(key string, ctx *context.Context) (interface{}, error)
-	PUT(key, value string, ctx *context.Context) (interface{}, error)
-	DELETE(key string, ctx *context.Context) (interface{}, error)
+	Get(key string, ctx *context.Context) (interface{}, error)
+	Put(key, value string, ctx *context.Context) (interface{}, error)
+	Delete(key string, ctx *context.Context) (interface{}, error)
+	DeleteZone(key string, ctx *context.Context) (interface{}, error)
 }
 
 func etcdConnection() *clientv3.Client {
@@ -49,17 +50,17 @@ func etcdConnection() *clientv3.Client {
 	return cli
 }
 
-func (e *ETCD) GET(key string, ctx context.Context) ([]interface{}, error) {
+func (e *ETCD) Get(key string, ctx context.Context) ([]interface{}, int, error) {
 	var result []interface{}
-	item := make(map[string]interface{})
 
-	resp, err := e.Cli.Get(ctx, key, clientv3.WithPrevKV())
+	resp, err := e.Cli.Get(ctx, key, clientv3.WithPrefix())
 	if err != nil {
 		log.Fatalf("get etcd key value error")
-		return result, err
+		return result, 0, err
 	}
 
 	for _, v := range resp.Kvs {
+		item := make(map[string]interface{})
 		item["key"] = msg.Path2String(msg.String(v.Key))
 		item["value"] = msg.String(v.Value)
 		item["create_revision"] = v.CreateRevision
@@ -67,15 +68,32 @@ func (e *ETCD) GET(key string, ctx context.Context) ([]interface{}, error) {
 		item["version"] = v.Version
 		result = append(result, item)
 	}
-	result = append(result, resp.Count)
-	return result, err
+	return result, int(resp.Count), err
 }
 
-func (e *ETCD) PUT(key, value string, ctx context.Context) (string, error) {
-	putResp, err := e.Cli.Put(ctx, key, value, clientv3.WithPrevKV())
+func (e *ETCD) Put(key, value string, ctx context.Context) (string, error) {
+	_, err := e.Cli.Put(ctx, key, value, clientv3.WithPrevKV())
 	if err != nil {
 		log.Fatalf("error put key value")
 		return "", err
 	}
-	return msg.String(putResp.PrevKv.Value), err
+	return "Put Success", err
+}
+
+func (e *ETCD) Delete(key string, ctx context.Context) (string, error) {
+	_, err := e.Cli.Delete(ctx, key)
+	if err != nil {
+		log.Fatalf("error delete key value")
+		return "", err
+	}
+	return "Deleted", err
+}
+
+func (e *ETCD) DeleteZone(key string, ctx context.Context) (string, error) {
+	_, err := e.Cli.Delete(ctx, key, clientv3.WithPrefix())
+	if err != nil {
+		log.Fatalf("error delete key value")
+		return "", err
+	}
+	return "Deleted", err
 }

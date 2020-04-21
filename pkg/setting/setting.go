@@ -15,6 +15,7 @@ var (
 	PageSize     int
 	JWTSecret    string
 	Endpoints    string
+	RootKey      string
 )
 
 func init() {
@@ -61,4 +62,5 @@ func LoadETCD() {
 	}
 
 	Endpoints = sec.Key("ENDPOINTS").MustString("localhost:2379")
+	RootKey = sec.Key("ROOTKEY").MustString("/coredns")
 }
