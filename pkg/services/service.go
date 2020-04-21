@@ -9,16 +9,16 @@ import (
 )
 
 type DNSRecord struct {
-	Record      string `json:"record"`
-	Host        string `json:"host"`
-	Zone        string `json:"zone"`
-	DNSType     string `json:"dns_type,omitempty"`
-	TTL         int    `json:"ttl,omitempty"`
-	Weight      int    `json:"weight,omitempty"`
-	Port        int    `json:"port,omitempty"`
-	Priority    int    `json:"priority,omitempty"`
-	TargetStrip int    `json:"targetstrip,omitempty"`
-	Group       string `json:"group,omitempty"`
+	Record      string `json:"record "form:"record" binding:"required"`
+	Host        string `json:"host" form:"host" binding:"required"`
+	Zone        string `json:"zone" form:"zone" binding:"required"`
+	DNSType     string `json:"dns_type" form:"dns_type,omitempty"`
+	TTL         int    `json:"ttl" form:"ttl,omitempty"`
+	Weight      int    `json:"weight" form:"weight,omitempty"`
+	Port        int    `json:"port" form:"port,omitempty"`
+	Priority    int    `json:"priority" form:"priority,omitempty"`
+	TargetStrip int    `json:"target_strip" form:"targetstrip,omitempty"`
+	Group       string `json:"group" form:"group,omitempty"`
 }
 
 type DNSObj interface {
@@ -28,13 +28,13 @@ type DNSObj interface {
 
 func Get(zone string) (interface{}, int, error) {
 	newCLI := etcd.ETCD{etcd.EtcdCli}
-	result, count, err := newCLI.Get(msg.Path2String(zone), context.TODO())
+	result, count, err := newCLI.Get(msg.String2Path(zone), context.TODO())
 	return result, count, err
 }
 
 func Delete(zone, record string) (interface{}, error) {
 	newCLI := etcd.ETCD{etcd.EtcdCli}
-	result, err := newCLI.Delete((msg.String2Path(zone))+msg.String2Record(record), context.TODO())
+	result, err := newCLI.Delete((msg.String2Path(zone))+"/"+record, context.TODO())
 	return result, err
 }
 
@@ -55,30 +55,30 @@ func (dr *DNSRecord) Add() (interface{}, error) {
 	if dr.DNSType == "A" {
 		tempMap["host"] = dr.Host
 		tempMap["ttl"] = dr.TTL
-		jsonStr, err := json.Marshal(tempMap)
+		formStr, err := json.Marshal(tempMap)
 		if err != nil {
-			log.Fatalf("json parse error")
+			log.Fatalf("form parse error")
 		}
-		result, err = newCLI.Put(msg.Path2String(dr.Zone)+msg.String2Record(dr.Record), msg.String(jsonStr), context.TODO())
+		result, err = newCLI.Put(msg.String2Path(dr.Zone)+"/"+dr.Record, msg.String(formStr), context.TODO())
 	}
 	if dr.DNSType == "SRV" && dr.Port != 0 {
 		tempMap["host"] = dr.Host
 		tempMap["ttl"] = dr.TTL
 		tempMap["priority"] = dr.Priority
 		tempMap["port"] = dr.Port
-		jsonStr, err := json.Marshal(tempMap)
+		formStr, err := json.Marshal(tempMap)
 		if err != nil {
-			log.Fatalf("json parse error")
+			log.Fatalf("form parse error")
 		}
-		result, err = newCLI.Put(msg.String2Path(dr.Zone)+msg.String2Record(dr.Record), msg.String(jsonStr), context.TODO())
+		result, err = newCLI.Put(msg.String2Path(dr.Zone)+"/"+dr.Record, msg.String(formStr), context.TODO())
 	}
 	if dr.DNSType == "PTR" && dr.TTL == 0 {
 		tempMap["host"] = dr.Host
-		jsonStr, err := json.Marshal(tempMap)
+		formStr, err := json.Marshal(tempMap)
 		if err != nil {
-			log.Fatalf("json parse error")
+			log.Fatalf("form parse error")
 		}
-		result, err = newCLI.Put(msg.Path2String(dr.Zone)+msg.String2Record(dr.Record), msg.String(jsonStr), context.TODO())
+		result, err = newCLI.Put(msg.String2Path(dr.Zone)+"/"+dr.Record, msg.String(formStr), context.TODO())
 	}
 	return result, err
 }

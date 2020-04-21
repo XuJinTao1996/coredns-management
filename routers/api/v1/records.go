@@ -31,7 +31,7 @@ func AddDnsRecord(c *gin.Context) {
 	appG := app.Gin{C: c}
 	data := make(map[string]interface{})
 
-	err := c.ShouldBind(&dnsRecord)
+	err := c.ShouldBindJSON(&dnsRecord)
 	if err != nil {
 		appG.Response(http.StatusInternalServerError, e.ERROR, data)
 		return

@@ -18,13 +18,13 @@ func String2Path(p string) string {
 	return setting.RootKey + "/" + strings.Join(strlist, "/")
 }
 
-func String2Record(p string) string {
-	strlist := strings.Split(p, ".")
-	for i, j := 0, len(strlist)-1; i < j; i, j = i+1, j-1 {
-		strlist[i], strlist[j] = strlist[j], strlist[i]
-	}
-	return "/" + strings.Join(strlist, "/")
-}
+//func String2Record(p string) string {
+//	strlist := strings.Split(p, ".")
+//	for i, j := 0, len(strlist)-1; i < j; i, j = i+1, j-1 {
+//		strlist[i], strlist[j] = strlist[j], strlist[i]
+//	}
+//	return "/" + strings.Join(strlist, "/")
+//}
 
 func Path2String(p string) string {
 	strlist := strings.Split(p, "/")[2:]
