@@ -19,3 +19,5 @@ require (
 	golang.org/x/sys v0.0.0-20200413165638-669c56c373c4 // indirect
 	google.golang.org/grpc v1.26.0 // indirect
 )
+
+replace github.com/coreos/go-systemd => github.com/coreos/go-systemd/v22 v22.0.0
