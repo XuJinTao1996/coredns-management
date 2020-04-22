@@ -24,22 +24,22 @@ func GetDnsRecords(c *gin.Context) {
 	appG.Response(http.StatusOK, e.SUCCESS, data)
 }
 
-// add a dns records
+// Add a dns records
 func AddDnsRecord(c *gin.Context) {
 	var dnsRecord services.DNSRecord
 
 	appG := app.Gin{C: c}
 	data := make(map[string]interface{})
 
-	err := c.ShouldBindJSON(&dnsRecord)
+	err := c.ShouldBind(&dnsRecord)
 	if err != nil {
-		appG.Response(http.StatusInternalServerError, e.ERROR, data)
+		appG.Response(http.StatusInternalServerError, e.PARAMETERS_ERR, data)
 		return
 	}
 
-	resp, err := dnsRecord.Add()
+	resp, err, errCode := dnsRecord.Add()
 	if err != nil {
-		appG.Response(http.StatusInternalServerError, e.ERROR, data)
+		appG.Response(http.StatusInternalServerError, errCode, data)
 		return
 	}
 
@@ -47,7 +47,7 @@ func AddDnsRecord(c *gin.Context) {
 	appG.Response(http.StatusOK, e.SUCCESS, data)
 }
 
-// add a dns records
+// Delete a dns records
 func DeleteDnsRecords(c *gin.Context) {
 	var (
 		resp interface{}
@@ -60,24 +60,18 @@ func DeleteDnsRecords(c *gin.Context) {
 	record := c.Query("record")
 
 	if zone == "" && record == "" {
-		appG.Response(http.StatusInternalServerError, e.ERROR, data)
+		appG.Response(http.StatusInternalServerError, e.PARAMETERS_ERR, data)
 		return
 	}
 
-	if zone != "" && record != "" {
-		resp, err = services.Delete(zone, record)
-		if err != nil {
-			appG.Response(http.StatusInternalServerError, e.ERROR, data)
-			return
-		}
-	}
-
-	if zone != "" {
+	if record == "" {
 		resp, err = services.DeleteZone(zone)
-		if err != nil {
-			appG.Response(http.StatusInternalServerError, e.ERROR, data)
-			return
-		}
+	} else {
+		resp, err = services.Delete(zone, record)
+	}
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.RECORD_DELETE_FAILED, data)
+		return
 	}
 
 	data["list"] = resp

@@ -86,7 +86,7 @@ func (e *ETCD) Delete(key string, ctx context.Context) (string, error) {
 		log.Fatalf("error delete key value")
 		return "", err
 	}
-	return "Deleted", err
+	return "Record Deleted", err
 }
 
 func (e *ETCD) DeleteZone(key string, ctx context.Context) (string, error) {
@@ -95,5 +95,5 @@ func (e *ETCD) DeleteZone(key string, ctx context.Context) (string, error) {
 		log.Fatalf("error delete key value")
 		return "", err
 	}
-	return "Deleted", err
+	return "Zone Deleted", err
 }

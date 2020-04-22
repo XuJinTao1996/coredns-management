@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/XuJinTao1996/coredns-management/models/etcd"
+	"github.com/XuJinTao1996/coredns-management/pkg/e"
 	"github.com/XuJinTao1996/coredns-management/pkg/msg"
-	"log"
 )
 
 type DNSRecord struct {
@@ -22,8 +22,8 @@ type DNSRecord struct {
 }
 
 type DNSObj interface {
-	Add() (interface{}, error)
-	Update() (interface{}, error)
+	Add() (interface{}, error, int)
+	Update() (interface{}, error, int)
 }
 
 func Get(zone string) (interface{}, int, error) {
@@ -45,10 +45,11 @@ func DeleteZone(zone string) (interface{}, error) {
 }
 
 // TODO check dns records params
-func (dr *DNSRecord) Add() (interface{}, error) {
+func (dr *DNSRecord) Add() (interface{}, error, int) {
 	var (
-		result string
-		err    error
+		result  string
+		err     error
+		errCode int
 	)
 	tempMap := make(map[string]interface{})
 	newCLI := etcd.ETCD{etcd.EtcdCli}
@@ -57,7 +58,16 @@ func (dr *DNSRecord) Add() (interface{}, error) {
 		tempMap["ttl"] = dr.TTL
 		formStr, err := json.Marshal(tempMap)
 		if err != nil {
-			log.Fatalf("form parse error")
+			errCode = e.A_RECORD_ADD_FAIL
+		}
+		result, err = newCLI.Put(msg.String2Path(dr.Zone)+"/"+dr.Record, msg.String(formStr), context.TODO())
+	}
+	if dr.DNSType == "CNAME" {
+		tempMap["host"] = dr.Host
+		tempMap["ttl"] = dr.TTL
+		formStr, err := json.Marshal(tempMap)
+		if err != nil {
+			errCode = e.CNAME_RECORD_ADD_FAIL
 		}
 		result, err = newCLI.Put(msg.String2Path(dr.Zone)+"/"+dr.Record, msg.String(formStr), context.TODO())
 	}
@@ -68,7 +78,7 @@ func (dr *DNSRecord) Add() (interface{}, error) {
 		tempMap["port"] = dr.Port
 		formStr, err := json.Marshal(tempMap)
 		if err != nil {
-			log.Fatalf("form parse error")
+			errCode = e.SRV_RECORD_ADD_FAIL
 		}
 		result, err = newCLI.Put(msg.String2Path(dr.Zone)+"/"+dr.Record, msg.String(formStr), context.TODO())
 	}
@@ -76,9 +86,9 @@ func (dr *DNSRecord) Add() (interface{}, error) {
 		tempMap["host"] = dr.Host
 		formStr, err := json.Marshal(tempMap)
 		if err != nil {
-			log.Fatalf("form parse error")
+			errCode = e.PTR_RECORD_ADD_FAIL
 		}
 		result, err = newCLI.Put(msg.String2Path(dr.Zone)+"/"+dr.Record, msg.String(formStr), context.TODO())
 	}
-	return result, err
+	return result, err, errCode
 }
